@@ -73,56 +73,74 @@ public class transportRouteController {
 		JSONObject apiRequest = AccessToken.checkToken("GET", "/transportroute", null, null, headToken);
 		if (apiRequest.has("error")) return new ResponseEntity(apiRequest.toString(), HttpStatus.OK);
 
-		TransportRoute transportroute = new TransportRoute();
 		JSONObject jsonTransportRoute = new JSONObject(data);
 		
-		if (!jsonTransportRoute.has("transportroute_CODE") || jsonTransportRoute.isNull("transportroute_CODE"))
-			return new ResponseEntity(getAPIResponse(null, null, null, null, "transportroute_CODE is missing!", apiRequest, true), HttpStatus.OK);
-
-		if (!jsonTransportRoute.has("transportroute_DESC") || jsonTransportRoute.isNull("transportroute_DESC"))
-			return new ResponseEntity(getAPIResponse(null, null, null, null, "transportroute_DESC is missing!", apiRequest, true), HttpStatus.OK);
-
-		if (!jsonTransportRoute.has("routetype_ID") || jsonTransportRoute.isNull("routetype_ID"))
-			return new ResponseEntity(getAPIResponse(null, null, null, null, "routetype_ID is missing!", apiRequest, true), HttpStatus.OK);
-
-		if (jsonTransportRoute.has("transportroute_CODE") && !jsonTransportRoute.isNull("transportroute_CODE"))
-			transportroute.setTRANSPORTROUTE_CODE(jsonTransportRoute.getString("transportroute_CODE"));
-		
-		if (jsonTransportRoute.has("transportroute_DESC") && !jsonTransportRoute.isNull("transportroute_DESC"))
-			transportroute.setTRANSPORTROUTE_DESC(jsonTransportRoute.getString("transportroute_DESC"));
-		
-		if (jsonTransportRoute.has("routetype_ID") && !jsonTransportRoute.isNull("routetype_ID"))
-			transportroute.setROUTETYPE_ID(jsonTransportRoute.getLong("routetype_ID"));
-		
-		if (jsonTransportRoute.has("color_ID") && !jsonTransportRoute.isNull("color_ID"))
-			transportroute.setCOLOUR_ID(jsonTransportRoute.getLong("color_ID"));
-		
-		return new ResponseEntity(getAPIResponse(null, transportroute, null, null, null, apiRequest, true), HttpStatus.OK);
+		return insertupdateAll(null, jsonTransportRoute, apiRequest);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@RequestMapping(value = "/{id}", method = RequestMethod.PUT)
-	private ResponseEntity update(@RequestHeader("Authorization") String headToken, @PathVariable Long id, @RequestBody TransportRoute data) throws JsonProcessingException, JSONException, ParseException, InterruptedException, ExecutionException {
+	private ResponseEntity update(@RequestHeader("Authorization") String headToken, @PathVariable Long id, @RequestBody String data) throws JsonProcessingException, JSONException, ParseException, InterruptedException, ExecutionException {
 		JSONObject apiRequest = AccessToken.checkToken("GET", "/transportroute", null, null, headToken);
 		if (apiRequest.has("error")) return new ResponseEntity(apiRequest.toString(), HttpStatus.OK);
 
-		TransportRoute transportroute = transportrouterepository.saveAndFlush(data);
-		
-		return new ResponseEntity(getAPIResponse(null, transportroute, null, null, null, apiRequest, true), HttpStatus.OK);
+		JSONObject jsonTransportRoute = new JSONObject(data);
+		jsonTransportRoute.put("transportroute_ID", id);
+
+		return insertupdateAll(null, jsonTransportRoute, apiRequest);
 	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@RequestMapping(method = RequestMethod.PUT)
-	private ResponseEntity insertupdate(@RequestHeader("Authorization") String headToken, @RequestBody List<TransportRoute> data) throws JsonProcessingException, JSONException, ParseException, InterruptedException, ExecutionException {
+	private ResponseEntity insertupdate(@RequestHeader("Authorization") String headToken, @RequestBody String data) throws JsonProcessingException, JSONException, ParseException, InterruptedException, ExecutionException {
 		JSONObject apiRequest = AccessToken.checkToken("GET", "/transportroute", null, null, headToken);
 		if (apiRequest.has("error")) return new ResponseEntity(apiRequest.toString(), HttpStatus.OK);
 
+		JSONArray jsonTransportRoutes = new JSONArray(data);
+
+		return insertupdateAll(jsonTransportRoutes, null, apiRequest);
+	}
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private ResponseEntity insertupdateAll(JSONArray jsonTransportRoutes, JSONObject jsonTransportRoute, JSONObject apiRequest) throws JSONException, JsonProcessingException, ParseException, InterruptedException, ExecutionException {
+		TransportRoute transportroute = new TransportRoute();
 		List<TransportRoute> transportroutes = new ArrayList<TransportRoute>();
 		
-		for (int i = 0; i <data.size(); i++) {
-			transportroutes.add(transportrouterepository.saveAndFlush(data.get(i)));
+		if (jsonTransportRoute != null) {
+			jsonTransportRoutes = new JSONArray();
+			jsonTransportRoutes.put(jsonTransportRoute);
 		}
-		return new ResponseEntity(getAPIResponse(transportroutes, null, null, null, null, apiRequest, true), HttpStatus.OK);
+		
+		for (int i = 0; i <jsonTransportRoutes.length(); i++) {
+			if (!jsonTransportRoute.has("transportroute_CODE") || jsonTransportRoute.isNull("transportroute_CODE"))
+				return new ResponseEntity(getAPIResponse(null, null, null, null, "transportroute_CODE is missing!", apiRequest, true), HttpStatus.OK);
+	
+			if (!jsonTransportRoute.has("transportroute_DESC") || jsonTransportRoute.isNull("transportroute_DESC"))
+				return new ResponseEntity(getAPIResponse(null, null, null, null, "transportroute_DESC is missing!", apiRequest, true), HttpStatus.OK);
+	
+			if (!jsonTransportRoute.has("routetype_ID") || jsonTransportRoute.isNull("routetype_ID"))
+				return new ResponseEntity(getAPIResponse(null, null, null, null, "routetype_ID is missing!", apiRequest, true), HttpStatus.OK);
+	
+			if (jsonTransportRoute.has("transportroute_CODE") && !jsonTransportRoute.isNull("transportroute_CODE"))
+				transportroute.setTRANSPORTROUTE_CODE(jsonTransportRoute.getString("transportroute_CODE"));
+			
+			if (jsonTransportRoute.has("transportroute_DESC") && !jsonTransportRoute.isNull("transportroute_DESC"))
+				transportroute.setTRANSPORTROUTE_DESC(jsonTransportRoute.getString("transportroute_DESC"));
+			
+			if (jsonTransportRoute.has("routetype_ID") && !jsonTransportRoute.isNull("routetype_ID"))
+				transportroute.setROUTETYPE_ID(jsonTransportRoute.getLong("routetype_ID"));
+			
+			if (jsonTransportRoute.has("color_ID") && !jsonTransportRoute.isNull("color_ID"))
+				transportroute.setCOLOUR_ID(jsonTransportRoute.getLong("color_ID"));
+			
+			if (jsonTransportRoute.has("isactive") && !jsonTransportRoute.isNull("isactive"))
+				transportroute.setISACTIVE(jsonTransportRoute.getString("isactive"));
+			
+		}
+
+		transportroute = transportrouterepository.saveAndFlush(transportroute);
+		
+		return new ResponseEntity(getAPIResponse(null, null, null, null, null, apiRequest, true), HttpStatus.OK);
 	}
 	
 	private String getAPIResponse(
