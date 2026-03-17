@@ -1,7 +1,9 @@
 package com.cwiztech.sectiona.controller;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -48,7 +50,7 @@ public class transportRouteController {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@RequestMapping(value = "/all", method = RequestMethod.GET)
 	private ResponseEntity getAll(@RequestHeader("Authorization") String headToken) throws JsonProcessingException, JSONException, ParseException, InterruptedException, ExecutionException {
-		JSONObject apiRequest = AccessToken.checkToken("GET", "/transportroute", null, null, headToken);
+		JSONObject apiRequest = AccessToken.checkToken("GET", "/transportroute/all", null, null, headToken);
 		if (apiRequest.has("error")) return new ResponseEntity(apiRequest.toString(), HttpStatus.OK);
 		
 		List<TransportRoute> transportroutes = transportrouterepository.findAll();
@@ -59,7 +61,7 @@ public class transportRouteController {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@RequestMapping(value = "/{id}", method = RequestMethod.GET)
 	private ResponseEntity getOne(@RequestHeader("Authorization") String headToken, @PathVariable Long id) throws JsonProcessingException, JSONException, ParseException, InterruptedException, ExecutionException {
-		JSONObject apiRequest = AccessToken.checkToken("GET", "/transportroute", null, null, headToken);
+		JSONObject apiRequest = AccessToken.checkToken("GET", "/transportroute/"+id, null, null, headToken);
 		if (apiRequest.has("error")) return new ResponseEntity(apiRequest.toString(), HttpStatus.OK);
 		
 		TransportRoute transportroute = transportrouterepository.findOne(id);
@@ -70,7 +72,7 @@ public class transportRouteController {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@RequestMapping(method = RequestMethod.POST)
 	private ResponseEntity insert(@RequestHeader("Authorization") String headToken, @RequestBody String data) throws JsonProcessingException, JSONException, ParseException, InterruptedException, ExecutionException {
-		JSONObject apiRequest = AccessToken.checkToken("GET", "/transportroute", null, null, headToken);
+		JSONObject apiRequest = AccessToken.checkToken("POST", "/transportroute", null, null, headToken);
 		if (apiRequest.has("error")) return new ResponseEntity(apiRequest.toString(), HttpStatus.OK);
 
 		JSONObject jsonTransportRoute = new JSONObject(data);
@@ -81,7 +83,7 @@ public class transportRouteController {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@RequestMapping(value = "/{id}", method = RequestMethod.PUT)
 	private ResponseEntity update(@RequestHeader("Authorization") String headToken, @PathVariable Long id, @RequestBody String data) throws JsonProcessingException, JSONException, ParseException, InterruptedException, ExecutionException {
-		JSONObject apiRequest = AccessToken.checkToken("GET", "/transportroute", null, null, headToken);
+		JSONObject apiRequest = AccessToken.checkToken("PUT", "/transportroute/"+id, null, null, headToken);
 		if (apiRequest.has("error")) return new ResponseEntity(apiRequest.toString(), HttpStatus.OK);
 
 		JSONObject jsonTransportRoute = new JSONObject(data);
@@ -93,7 +95,7 @@ public class transportRouteController {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@RequestMapping(method = RequestMethod.PUT)
 	private ResponseEntity insertupdate(@RequestHeader("Authorization") String headToken, @RequestBody String data) throws JsonProcessingException, JSONException, ParseException, InterruptedException, ExecutionException {
-		JSONObject apiRequest = AccessToken.checkToken("GET", "/transportroute", null, null, headToken);
+		JSONObject apiRequest = AccessToken.checkToken("PUT", "/transportroute", null, null, headToken);
 		if (apiRequest.has("error")) return new ResponseEntity(apiRequest.toString(), HttpStatus.OK);
 
 		JSONArray jsonTransportRoutes = new JSONArray(data);
@@ -103,7 +105,9 @@ public class transportRouteController {
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private ResponseEntity insertupdateAll(JSONArray jsonTransportRoutes, JSONObject jsonTransportRoute, JSONObject apiRequest) throws JSONException, JsonProcessingException, ParseException, InterruptedException, ExecutionException {
-		TransportRoute transportroute = new TransportRoute();
+		SimpleDateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		Date date = new Date();
+
 		List<TransportRoute> transportroutes = new ArrayList<TransportRoute>();
 		
 		if (jsonTransportRoute != null) {
@@ -112,15 +116,31 @@ public class transportRouteController {
 		}
 		
 		for (int i = 0; i <jsonTransportRoutes.length(); i++) {
-			if (!jsonTransportRoute.has("transportroute_CODE") || jsonTransportRoute.isNull("transportroute_CODE"))
-				return new ResponseEntity(getAPIResponse(null, null, null, null, "transportroute_CODE is missing!", apiRequest, true), HttpStatus.OK);
-	
-			if (!jsonTransportRoute.has("transportroute_DESC") || jsonTransportRoute.isNull("transportroute_DESC"))
-				return new ResponseEntity(getAPIResponse(null, null, null, null, "transportroute_DESC is missing!", apiRequest, true), HttpStatus.OK);
-	
-			if (!jsonTransportRoute.has("routetype_ID") || jsonTransportRoute.isNull("routetype_ID"))
-				return new ResponseEntity(getAPIResponse(null, null, null, null, "routetype_ID is missing!", apiRequest, true), HttpStatus.OK);
-	
+			JSONObject jsonObj = jsonTransportRoutes.getJSONObject(i);
+			TransportRoute transportroute = new TransportRoute();
+			long id = 0;
+			
+			if (jsonObj.has("transportroute_ID")) {
+				id = jsonObj.getLong("transportroute_ID");
+				if (id != 0) {
+					transportroute = transportrouterepository.findOne(id);
+					
+					if (transportroute == null)
+						return new ResponseEntity(getAPIResponse(null, null, null, null, "Invalid Transport Route Data!", apiRequest, true), HttpStatus.OK);
+				}
+			}
+			
+			if (id == 0) {
+				if (!jsonTransportRoute.has("transportroute_CODE") || jsonTransportRoute.isNull("transportroute_CODE"))
+					return new ResponseEntity(getAPIResponse(null, null, null, null, "transportroute_CODE is missing!", apiRequest, true), HttpStatus.OK);
+		
+				if (!jsonTransportRoute.has("transportroute_DESC") || jsonTransportRoute.isNull("transportroute_DESC"))
+					return new ResponseEntity(getAPIResponse(null, null, null, null, "transportroute_DESC is missing!", apiRequest, true), HttpStatus.OK);
+		
+				if (!jsonTransportRoute.has("routetype_ID") || jsonTransportRoute.isNull("routetype_ID"))
+					return new ResponseEntity(getAPIResponse(null, null, null, null, "routetype_ID is missing!", apiRequest, true), HttpStatus.OK);
+			}
+			
 			if (jsonTransportRoute.has("transportroute_CODE") && !jsonTransportRoute.isNull("transportroute_CODE"))
 				transportroute.setTRANSPORTROUTE_CODE(jsonTransportRoute.getString("transportroute_CODE"));
 			
@@ -130,17 +150,47 @@ public class transportRouteController {
 			if (jsonTransportRoute.has("routetype_ID") && !jsonTransportRoute.isNull("routetype_ID"))
 				transportroute.setROUTETYPE_ID(jsonTransportRoute.getLong("routetype_ID"));
 			
-			if (jsonTransportRoute.has("color_ID") && !jsonTransportRoute.isNull("color_ID"))
-				transportroute.setCOLOUR_ID(jsonTransportRoute.getLong("color_ID"));
+			if (jsonTransportRoute.has("colour_ID") && !jsonTransportRoute.isNull("colour_ID"))
+				transportroute.setCOLOUR_ID(jsonTransportRoute.getLong("colour_ID"));
 			
-			if (jsonTransportRoute.has("isactive") && !jsonTransportRoute.isNull("isactive"))
+			if (id == 0) 
+				transportroute.setISACTIVE("Y");
+			else if (jsonTransportRoute.has("isactive") && !jsonTransportRoute.isNull("isactive"))
 				transportroute.setISACTIVE(jsonTransportRoute.getString("isactive"));
 			
+			transportroute.setMODIFIED_BY(apiRequest.getLong("request_ID"));
+			transportroute.setMODIFIED_WORKSTATION(apiRequest.getString("log_WORKSTATION"));
+			transportroute.setMODIFIED_WHEN(dateFormat1.format(date));
+
+			transportroutes.add(transportroute);
 		}
 
-		transportroute = transportrouterepository.saveAndFlush(transportroute);
+		for (int i=0; i<transportroutes.size(); i++) {
+			TransportRoute transportroute = transportroutes.get(i);
+			transportroute = transportrouterepository.saveAndFlush(transportroute);
+			transportroutes.get(i).setTRANSPORTROUTE_ID(transportroute.getTRANSPORTROUTE_ID());
+		}
 		
-		return new ResponseEntity(getAPIResponse(null, null, null, null, null, apiRequest, true), HttpStatus.OK);
+		ResponseEntity responseentity;
+		
+		if (jsonTransportRoute != null)
+			responseentity = new ResponseEntity(getAPIResponse(null, transportroutes.get(0), null, null, null, apiRequest, true), HttpStatus.OK);
+		else 
+			responseentity = new ResponseEntity(getAPIResponse(transportroutes, null, null, null, null, apiRequest, true), HttpStatus.OK);
+		
+		return responseentity;
+	}
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+	private ResponseEntity delete(@RequestHeader("Authorization") String headToken, @PathVariable Long id) throws JsonProcessingException, JSONException, ParseException, InterruptedException, ExecutionException {
+		JSONObject apiRequest = AccessToken.checkToken("DELETE", "/transportroute/"+id, null, null, headToken);
+		if (apiRequest.has("error")) return new ResponseEntity(apiRequest.toString(), HttpStatus.OK);
+		
+		TransportRoute transportroute = transportrouterepository.findOne(id);
+		transportrouterepository.delete(transportroute);
+		
+		return new ResponseEntity(getAPIResponse(null, transportroute, null, null, null, apiRequest, true), HttpStatus.OK);
 	}
 	
 	private String getAPIResponse(
@@ -162,8 +212,23 @@ public class transportRouteController {
 	    		} else {
 	    			rtnAPIResponse = mapper.writeValueAsString(transportroutes);
 	    		}
+	    	} else if (transportroute != null) {
+    			rtnAPIResponse = mapper.writeValueAsString(transportroute);
+	    		
+	    	} else if (transportroutes != null) {
+    			rtnAPIResponse = mapper.writeValueAsString(transportroutes);
+
+	    	} else if (jsontransportroute != null) {
+	    		rtnAPIResponse = jsontransportroute.toString();
+
+	    	} else if (jsontransportroutes != null) {
+	    		rtnAPIResponse = jsontransportroutes.toString();
+
 	    	}
+
+	    	apiRequestLog.apiRequestSaveLog(apiRequest, rtnAPIResponse, "Success");
 	    }
+	    
 		return rtnAPIResponse;
 	}
 }
